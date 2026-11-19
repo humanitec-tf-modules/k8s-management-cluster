@@ -8,8 +8,6 @@ If your target cluster is one of Azure AKS, AWS EKS, or Google Cloud GKE, use th
 - [EKS](https://github.com/humanitec-tf-modules/management-cluster-eks)
 - [GKE](https://github.com/humanitec-tf-modules/management-cluster-gke)
 
-❌❌ TODO Add support for GitOps
-
 ## Runner cluster
 
 To also set up the cluster to execute runners, use the separate module for your cluster type:
