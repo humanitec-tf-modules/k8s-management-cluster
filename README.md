@@ -174,7 +174,7 @@ module "my_management_cluster" {
 ## Requirements
 
 | Name | Version |
-| ---- | ------- |
+|------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.11.0 |
 | <a name="requirement_helm"></a> [helm](#requirement\_helm) | ~> 3.0 |
 | <a name="requirement_humanitec"></a> [humanitec](#requirement\_humanitec) | ~> 1.9 |
@@ -189,7 +189,7 @@ No modules.
 ## Resources
 
 | Name | Type |
-| ---- | ---- |
+|------|------|
 | [helm_release.humanitec_operator](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
 | [humanitec_key.operator](https://registry.terraform.io/providers/humanitec/humanitec/latest/docs/resources/key) | resource |
 | [humanitec_resource_definition.cluster](https://registry.terraform.io/providers/humanitec/humanitec/latest/docs/resources/resource_definition) | resource |
@@ -203,7 +203,7 @@ No modules.
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-| ---- | ----------- | ---- | ------- | :------: |
+|------|-------------|------|---------|:--------:|
 | <a name="input_cloud_account_id"></a> [cloud\_account\_id](#input\_cloud\_account\_id) | ID of the Cloud Account the Orchestrator uses to access the cluster, e.g. an AWS Cloud Account for `humanitec/k8s-cluster-eks`. Leave unset for Drivers using static credentials in `cluster_secrets`, such as `humanitec/k8s-cluster`. | `string` | `null` | no |
 | <a name="input_cluster_access_subject_kind"></a> [cluster\_access\_subject\_kind](#input\_cluster\_access\_subject\_kind) | Kind of the subject the Orchestrator authenticates as when accessing the cluster. One of `Group` or `User`. The module binds the ClusterRole `cluster_role_name` to this subject. | `string` | n/a | yes |
 | <a name="input_cluster_access_subject_name"></a> [cluster\_access\_subject\_name](#input\_cluster\_access\_subject\_name) | Name of the subject the Orchestrator authenticates as when accessing the cluster, e.g. the name of a group or the user name. The module binds the ClusterRole `cluster_role_name` to this subject. | `string` | n/a | yes |
@@ -267,7 +267,7 @@ No modules.
 ## Outputs
 
 | Name | Description |
-| ---- | ----------- |
+|------|-------------|
 | <a name="output_cluster_access_subject"></a> [cluster\_access\_subject](#output\_cluster\_access\_subject) | Subject of the Kubernetes ClusterRoleBinding, i.e. the identity the Orchestrator uses to access the cluster, as an object with the attributes `kind` and `name` |
 | <a name="output_cluster_role_binding_name"></a> [cluster\_role\_binding\_name](#output\_cluster\_role\_binding\_name) | Name of the Kubernetes ClusterRoleBinding granting the Orchestrator access to the cluster |
 | <a name="output_cluster_role_name"></a> [cluster\_role\_name](#output\_cluster\_role\_name) | Name of the Kubernetes ClusterRole granting the Orchestrator access to the cluster |
