@@ -5,10 +5,19 @@
 mock_provider "helm" {}
 mock_provider "humanitec" {}
 mock_provider "kubernetes" {}
+mock_provider "random" {}
 mock_provider "tls" {}
 
 variables {
   helm_release_version = "1.2.3"
+
+  # Required cluster inputs
+  resource_definition_id      = "my-cluster"
+  cloud_account_id            = "my-aws-account"
+  cluster_values              = { name = "my-cluster", region = "eu-central-1" }
+  driver_type                 = "humanitec/k8s-cluster-eks"
+  cluster_access_subject_kind = "Group"
+  cluster_access_subject_name = "humanitec-platform-orchestrator"
 }
 
 run "installs_chart_with_defaults" {

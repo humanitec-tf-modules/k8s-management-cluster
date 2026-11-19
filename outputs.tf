@@ -39,3 +39,26 @@ output "helm_release_chart" {
   description = "Chart name used for the Operator Helm chart"
   value       = helm_release.humanitec_operator.chart
 }
+output "resource_definition_id" {
+  description = "ID of the Resource Definition of type `k8s-cluster` representing the cluster"
+  value       = humanitec_resource_definition.cluster.id
+}
+output "resource_definition_driver_type" {
+  description = "Driver type of the Resource Definition"
+  value       = humanitec_resource_definition.cluster.driver_type
+}
+output "cluster_role_name" {
+  description = "Name of the Kubernetes ClusterRole granting the Orchestrator access to the cluster"
+  value       = kubernetes_cluster_role_v1.deploy_access.metadata[0].name
+}
+output "cluster_role_binding_name" {
+  description = "Name of the Kubernetes ClusterRoleBinding granting the Orchestrator access to the cluster"
+  value       = kubernetes_cluster_role_binding_v1.deploy_access.metadata[0].name
+}
+output "cluster_access_subject" {
+  description = "Subject of the Kubernetes ClusterRoleBinding, i.e. the identity the Orchestrator uses to access the cluster, as an object with the attributes `kind` and `name`"
+  value = {
+    kind = kubernetes_cluster_role_binding_v1.deploy_access.subject[0].kind
+    name = kubernetes_cluster_role_binding_v1.deploy_access.subject[0].name
+  }
+}

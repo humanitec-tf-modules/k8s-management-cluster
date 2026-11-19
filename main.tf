@@ -95,3 +95,133 @@ resource "kubernetes_secret_v1" "operator_private_key" {
   # On destroy, the Secret is removed before the registration.
   depends_on = [humanitec_key.operator]
 }
+
+# Random suffix for the generated Resource Definition ID. Created only if no ID is passed in
+resource "random_string" "resource_definition_id_suffix" {
+  count = var.resource_definition_id == null ? 1 : 0
+
+  length  = 4
+  upper   = false
+  special = false
+}
+
+locals {
+  resource_definition_id = var.resource_definition_id != null ? var.resource_definition_id : "${var.resource_definition_id_prefix}-${random_string.resource_definition_id_suffix[0].result}"
+
+  # Drop unset values so that the Driver applies its defaults
+  cluster_driver_values = {
+    for k, v in var.cluster_values : k => v if v != null
+  }
+
+  # Driver secrets: the passed-in secrets, and the URL of the Humanitec Agent if enabled
+  cluster_driver_secrets = merge(
+    var.cluster_secrets,
+    var.enable_agent ? { agent_url = "$${resources['agent#agent'].outputs.url}" } : {},
+  )
+}
+
+# Permissions for the Orchestrator to deploy to the cluster in Direct mode. Identical for all cluster types.
+# See https://developer.humanitec.com/platform-orchestrator/docs/integration-and-extensions/containerization/kubernetes/
+resource "kubernetes_cluster_role_v1" "deploy_access" {
+  metadata {
+    name = var.cluster_role_name
+  }
+
+  # Namespaces management
+  rule {
+    api_groups = [""]
+    resources  = ["namespaces"]
+    verbs      = ["create", "get", "list", "update", "patch", "delete"]
+  }
+  # Humanitec's CRs management
+  rule {
+    api_groups = ["humanitec.io"]
+    resources  = ["resources", "secretmappings", "workloadpatches", "workloads"]
+    verbs      = ["create", "get", "list", "update", "patch", "delete", "deletecollection", "watch"]
+  }
+  # Deployment / Workload Status in UI
+  rule {
+    api_groups = ["batch"]
+    resources  = ["jobs"]
+    verbs      = ["get", "list"]
+  }
+  rule {
+    api_groups = ["apps"]
+    resources  = ["deployments", "statefulsets", "replicasets", "daemonsets"]
+    verbs      = ["get", "list"]
+  }
+  # "watch" keeps the pod status in the UI's runtime view live
+  rule {
+    api_groups = [""]
+    resources  = ["pods"]
+    verbs      = ["get", "list", "watch"]
+  }
+  # Container logs in the UI
+  rule {
+    api_groups = [""]
+    resources  = ["pods/log"]
+    verbs      = ["get", "list"]
+  }
+  # Pause Environments
+  rule {
+    api_groups = ["apps"]
+    resources  = ["deployments/scale"]
+    verbs      = ["update"]
+  }
+  # Active Resources outputs
+  rule {
+    api_groups = [""]
+    resources  = ["configmaps"]
+    verbs      = ["get"]
+  }
+}
+
+# Bind the permissions to the identity the Orchestrator uses to access the cluster.
+resource "kubernetes_cluster_role_binding_v1" "deploy_access" {
+  metadata {
+    name = kubernetes_cluster_role_v1.deploy_access.metadata[0].name
+  }
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = kubernetes_cluster_role_v1.deploy_access.metadata[0].name
+  }
+  subject {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = var.cluster_access_subject_kind
+    name      = var.cluster_access_subject_name
+  }
+}
+
+# Resource Definition representing the cluster in the Orchestrator
+resource "humanitec_resource_definition" "cluster" {
+  id             = local.resource_definition_id
+  name           = coalesce(var.resource_definition_name, local.resource_definition_id)
+  type           = "k8s-cluster"
+  driver_type    = var.driver_type
+  driver_account = var.cloud_account_id
+
+  driver_inputs = {
+    values_string  = jsonencode(local.cluster_driver_values)
+    secrets_string = length(local.cluster_driver_secrets) > 0 ? jsonencode(local.cluster_driver_secrets) : null
+  }
+
+  # Make Deployments target the cluster only once the Operator is running and the Orchestrator has access.
+  # On destroy, the Resource Definition is removed first.
+  depends_on = [
+    helm_release.humanitec_operator,
+    kubernetes_cluster_role_binding_v1.deploy_access,
+  ]
+}
+
+# Matching Criteria directing Deployments to the cluster
+resource "humanitec_resource_definition_criteria" "cluster" {
+  count = length(var.resource_definition_criteria)
+
+  resource_definition_id = humanitec_resource_definition.cluster.id
+  app_id                 = var.resource_definition_criteria[count.index].app_id
+  env_id                 = var.resource_definition_criteria[count.index].env_id
+  env_type               = var.resource_definition_criteria[count.index].env_type
+  res_id                 = var.resource_definition_criteria[count.index].res_id
+  class                  = var.resource_definition_criteria[count.index].class
+}

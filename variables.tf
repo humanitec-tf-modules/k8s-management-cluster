@@ -1,3 +1,109 @@
+# Cluster Resource Definition and access
+variable "resource_definition_id" {
+  description = "ID of the Resource Definition of type `k8s-cluster` representing the cluster. Must be unique within the Humanitec Organization. Defaults to `<resource_definition_id_prefix>-<suffix>` with a random suffix of four lowercase alphanumeric characters."
+  type        = string
+  nullable    = true
+  default     = null
+  validation {
+    condition     = var.resource_definition_id == null || try(trimspace(var.resource_definition_id), "") != ""
+    error_message = "resource_definition_id must not be empty if set."
+  }
+}
+variable "resource_definition_id_prefix" {
+  description = "Prefix of the generated `resource_definition_id`, e.g. `management-cluster-eks`. Ignored if `resource_definition_id` is set."
+  type        = string
+  nullable    = false
+  default     = "management-cluster"
+  validation {
+    condition     = trimspace(var.resource_definition_id_prefix) != ""
+    error_message = "resource_definition_id_prefix must not be empty."
+  }
+}
+variable "resource_definition_name" {
+  description = "Display name of the Resource Definition. Defaults to `resource_definition_id`."
+  type        = string
+  nullable    = true
+  default     = null
+}
+variable "resource_definition_criteria" {
+  description = "Matching Criteria for the Resource Definition, directing Deployments to the cluster. Each entry creates one Matching Criteria. Unset attributes match any value. See https://developer.humanitec.com/platform-orchestrator/docs/platform-orchestrator/resources/resource-definitions/#matching-criteria"
+  type = list(object({
+    app_id   = optional(string)
+    env_id   = optional(string)
+    env_type = optional(string)
+    res_id   = optional(string)
+    class    = optional(string)
+  }))
+  nullable = false
+  default  = []
+}
+variable "cloud_account_id" {
+  description = "ID of the Cloud Account the Orchestrator uses to access the cluster, e.g. an AWS Cloud Account for `humanitec/k8s-cluster-eks`. Leave unset for Drivers using static credentials in `cluster_secrets`, such as `humanitec/k8s-cluster`."
+  type        = string
+  nullable    = true
+  default     = null
+  validation {
+    condition     = var.cloud_account_id == null || try(trimspace(var.cloud_account_id), "") != ""
+    error_message = "cloud_account_id must not be empty if set."
+  }
+}
+variable "driver_type" {
+  description = "Driver of the Resource Definition, e.g. `humanitec/k8s-cluster-eks`. See https://developer.humanitec.com/platform-orchestrator/docs/integration-and-extensions/drivers/k8-drivers/"
+  type        = string
+  nullable    = false
+  validation {
+    condition     = trimspace(var.driver_type) != ""
+    error_message = "driver_type must not be empty."
+  }
+}
+variable "cluster_access_subject_kind" {
+  description = "Kind of the subject the Orchestrator authenticates as when accessing the cluster. One of `Group` or `User`. The module binds the ClusterRole `cluster_role_name` to this subject."
+  type        = string
+  nullable    = false
+  validation {
+    condition     = contains(["Group", "User"], var.cluster_access_subject_kind)
+    error_message = "cluster_access_subject_kind must be one of Group, User."
+  }
+}
+variable "cluster_access_subject_name" {
+  description = "Name of the subject the Orchestrator authenticates as when accessing the cluster, e.g. the name of a group or the user name. The module binds the ClusterRole `cluster_role_name` to this subject."
+  type        = string
+  nullable    = false
+  validation {
+    condition     = trimspace(var.cluster_access_subject_name) != ""
+    error_message = "cluster_access_subject_name must not be empty."
+  }
+}
+variable "enable_agent" {
+  description = "Access the cluster through the Humanitec Agent. Adds the secret `agent_url`, referencing the output `url` of the Resource `agent#agent`, to the Resource Definition. Requires a Resource Definition of type `agent` matching the same Deployments as the cluster. See https://developer.humanitec.com/platform-orchestrator/docs/integration-and-extensions/humanitec-agent/overview/"
+  type        = bool
+  nullable    = false
+  default     = true
+}
+variable "cluster_role_name" {
+  description = "Name of the Kubernetes ClusterRole and ClusterRoleBinding granting the Orchestrator access to the cluster."
+  type        = string
+  nullable    = false
+  default     = "humanitec-deploy-access"
+}
+variable "cluster_values" {
+  description = "Driver input values of the Resource Definition. Their keys depend on `driver_type`, see the Driver documentation at https://developer.humanitec.com/platform-orchestrator/docs/integration-and-extensions/drivers/k8-drivers/. Must contain the key `name` with the name of the cluster. Entries with a `null` value are omitted so that the Driver default applies."
+  type        = any
+  nullable    = false
+  validation {
+    condition     = try(trimspace(var.cluster_values["name"]), "") != ""
+    error_message = "cluster_values must contain the key name with the name of the cluster."
+  }
+}
+variable "cluster_secrets" {
+  description = "Driver input secrets of the Resource Definition, e.g. `credentials` for the Driver `humanitec/k8s-cluster`. Their keys depend on `driver_type`, see the Driver documentation at https://developer.humanitec.com/platform-orchestrator/docs/integration-and-extensions/drivers/k8-drivers/. If `enable_agent` is `true`, the module adds the key `agent_url`."
+  type        = any
+  sensitive   = true
+  nullable    = false
+  default     = {}
+}
+
+# Operator installation
 variable "humanitec_org_id" {
   description = "Humanitec Organization ID. Required if `enable_driver_authentication` is `true`, ignored otherwise."
   type        = string
