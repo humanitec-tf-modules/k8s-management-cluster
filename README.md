@@ -1,6 +1,6 @@
 # Humanitec Management Cluster on Kubernetes
 
-This repository contains an OpenTofu/Terraform module for setting up a Humanitec management cluster on Kubernetes.
+This repository contains an OpenTofu/Terraform module for configuring an existing Kubernetes cluster as a Humanitec management cluster.
 
 If your target cluster is one of Azure AKS, AWS EKS, or Google Cloud GKE, use these modules instead of the current one:
 
