@@ -24,6 +24,9 @@ The setup includes installing the [Humanitec Operator](https://developer.humanit
 The Operator install uses a [Helm chart](https://helm.sh). The module exposes all the properties of the [`helm_release` resource](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) as variables named `helm_release_*`.
 
 The chart has its own values which you can set through the module's `helm_release_values` or `helm_release_set*` variables. To list them, run `helm show values oci://ghcr.io/humanitec/charts/humanitec-operator`. See the [usage example](#set-helm-chart-values) below.
+
+Connecting a secret store to the Operator is not part of this module. [Sibling modules](https://github.com/orgs/humanitec-tf-modules/repositories?q=secret-store) are available that implement the [guides for your secret store type](https://developer.humanitec.com/platform-orchestrator/guides/platform-engineers/security/connect-secret-stores/overview/). 
+
 ## Humanitec Agent
 
 By default, the module configures access for the Platform Orchestrator to the cluster through the [Humanitec Agent](https://developer.humanitec.com/platform-orchestrator/docs/integration-and-extensions/humanitec-agent/overview/) by adding the secret `agent_url` to the Resource Definition, referencing the output `url` of the Resource `agent#agent`. This requires a Resource Definition of type `agent` matching the same Deployments as the cluster.
@@ -38,12 +41,10 @@ The Operator needs to [authenticate against Humanitec-hosted Drivers](https://de
 
 Authentication for Drivers is off by default. To turn it on, set `enable_driver_authentication = true`. The module then does two things:
 
-- It registers the public key in your Humanitec Organization with a [`humanitec_key`](https://registry.terraform.io/providers/humanitec/humanitec/latest/docs/resources/key) resource.
-- It stores the private key and the Humanitec Organization ID in the Kubernetes Secret `humanitec-operator-private-key` in the Operator namespace.
+- It registers the public key in your Humanitec Organization
+- It stores the private key and the Humanitec Organization ID in a Kubernetes Secret in the Operator namespace
 
 You can pass in a key pair via `operator_private_key` and `operator_public_key`, or let the module generate one.
-
-Connecting a secret store to the Operator is not part of this module. Follow one of the [guides for your secret store type](https://developer.humanitec.com/platform-orchestrator/guides/platform-engineers/security/connect-secret-stores/overview/).
 
 ## Usage
 
