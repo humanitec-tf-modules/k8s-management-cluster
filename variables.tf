@@ -26,7 +26,7 @@ variable "resource_definition_name" {
   default     = null
 }
 variable "resource_definition_criteria" {
-  description = "Matching Criteria for the Resource Definition, directing Deployments to the cluster. Each entry creates one Matching Criteria. Unset attributes match any value. See https://developer.humanitec.com/platform-orchestrator/docs/platform-orchestrator/resources/resource-definitions/#matching-criteria"
+  description = "Matching Criteria for the Resource Definition, directing Deployments to the cluster. Each entry creates one Matching Criteria and must be unique. Unset attributes match any value. See https://developer.humanitec.com/platform-orchestrator/docs/platform-orchestrator/resources/resource-definitions/#matching-criteria"
   type = list(object({
     app_id   = optional(string)
     env_id   = optional(string)
@@ -36,6 +36,10 @@ variable "resource_definition_criteria" {
   }))
   nullable = false
   default  = []
+  validation {
+    condition     = length(distinct(var.resource_definition_criteria)) == length(var.resource_definition_criteria)
+    error_message = "resource_definition_criteria must not contain duplicate entries."
+  }
 }
 variable "cloud_account_id" {
   description = "ID of the Cloud Account the Orchestrator uses to access the cluster, e.g. an AWS Cloud Account for `humanitec/k8s-cluster-eks`. Leave unset for Drivers using static credentials in `cluster_secrets`, such as `humanitec/k8s-cluster`."

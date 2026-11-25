@@ -116,3 +116,16 @@ run "rejects_cluster_values_with_null_name" {
 
   expect_failures = [var.cluster_values]
 }
+
+run "rejects_duplicate_resource_definition_criteria" {
+  command = plan
+
+  variables {
+    resource_definition_criteria = [
+      { env_type = "development" },
+      { env_type = "development", app_id = null },
+    ]
+  }
+
+  expect_failures = [var.resource_definition_criteria]
+}

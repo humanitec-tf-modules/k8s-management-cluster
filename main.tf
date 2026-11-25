@@ -224,14 +224,16 @@ resource "humanitec_resource_definition" "cluster" {
   ]
 }
 
-# Matching Criteria directing Deployments to the cluster
+# Matching Criteria directing Deployments to the cluster.
+# Keyed by content rather than position so that removing or reordering an entry does not recreate the other
+# Matching Criteria, which the Orchestrator refuses to delete while they are in use.
 resource "humanitec_resource_definition_criteria" "cluster" {
-  count = length(var.resource_definition_criteria)
+  for_each = { for c in var.resource_definition_criteria : jsonencode({ for k, v in c : k => v if v != null }) => c }
 
   resource_definition_id = humanitec_resource_definition.cluster.id
-  app_id                 = var.resource_definition_criteria[count.index].app_id
-  env_id                 = var.resource_definition_criteria[count.index].env_id
-  env_type               = var.resource_definition_criteria[count.index].env_type
-  res_id                 = var.resource_definition_criteria[count.index].res_id
-  class                  = var.resource_definition_criteria[count.index].class
+  app_id                 = each.value.app_id
+  env_id                 = each.value.env_id
+  env_type               = each.value.env_type
+  res_id                 = each.value.res_id
+  class                  = each.value.class
 }

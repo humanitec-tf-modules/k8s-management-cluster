@@ -234,16 +234,32 @@ run "names_resource_definition_and_creates_criteria" {
     error_message = "One Matching Criteria must be created per entry of resource_definition_criteria"
   }
   assert {
-    condition     = humanitec_resource_definition_criteria.cluster[0].resource_definition_id == "my-cluster" && humanitec_resource_definition_criteria.cluster[0].env_type == "development" && humanitec_resource_definition_criteria.cluster[0].app_id == null
-    error_message = "The first Matching Criteria must match the env_type only"
+    condition     = humanitec_resource_definition_criteria.cluster["{\"env_type\":\"development\"}"].resource_definition_id == "my-cluster" && humanitec_resource_definition_criteria.cluster["{\"env_type\":\"development\"}"].env_type == "development" && humanitec_resource_definition_criteria.cluster["{\"env_type\":\"development\"}"].app_id == null
+    error_message = "The first Matching Criteria must match the env_type only and be keyed by its set attributes"
   }
   assert {
-    condition     = humanitec_resource_definition_criteria.cluster[1].app_id == "my-app" && humanitec_resource_definition_criteria.cluster[1].env_id == "test" && humanitec_resource_definition_criteria.cluster[1].env_type == null
-    error_message = "The second Matching Criteria must match the app_id and env_id"
+    condition     = humanitec_resource_definition_criteria.cluster["{\"app_id\":\"my-app\",\"env_id\":\"test\"}"].app_id == "my-app" && humanitec_resource_definition_criteria.cluster["{\"app_id\":\"my-app\",\"env_id\":\"test\"}"].env_id == "test" && humanitec_resource_definition_criteria.cluster["{\"app_id\":\"my-app\",\"env_id\":\"test\"}"].env_type == null
+    error_message = "The second Matching Criteria must match the app_id and env_id and be keyed by its set attributes"
   }
   assert {
     condition     = output.resource_definition_id == "my-cluster" && output.resource_definition_driver_type == "humanitec/k8s-cluster-eks"
     error_message = "resource_definition_id and resource_definition_driver_type outputs must reflect the Resource Definition"
+  }
+}
+
+run "keys_criteria_independently_of_their_position" {
+  command = plan
+
+  variables {
+    resource_definition_criteria = [
+      { app_id = "my-app", env_id = "test" },
+      {},
+    ]
+  }
+
+  assert {
+    condition     = keys(humanitec_resource_definition_criteria.cluster) == ["{\"app_id\":\"my-app\",\"env_id\":\"test\"}", "{}"]
+    error_message = "Matching Criteria must be keyed by their set attributes so that removing or reordering entries does not change the keys of the others"
   }
 }
 
