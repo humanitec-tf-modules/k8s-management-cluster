@@ -174,6 +174,34 @@ module "my_management_cluster" {
 }
 ```
 
+### Set Helm chart values
+
+This example adds a Pod label:
+
+```hcl
+module "my_management_cluster" {
+  source = "github.com/humanitec-tf-modules/k8s-management-cluster?ref=vX.Y.Z"
+  providers = {
+    humanitec  = humanitec
+    helm       = helm
+    kubernetes = kubernetes
+  }
+
+  # Cluster inputs omitted
+
+  # Additional Helm chart values
+  helm_release_values = [
+    yamlencode({
+      controllerManager = {
+        podLabels = {
+          "team" = "platform"
+        }
+      }
+    }),
+  ]
+}
+```
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
