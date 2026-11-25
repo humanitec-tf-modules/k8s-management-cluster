@@ -52,7 +52,7 @@ You can pass in a key pair via `operator_private_key` and `operator_public_key`,
 
 ```hcl
 module "my_management_cluster" {
-  source = "github.com/humanitec-tf-modules/management-cluster-k8s?ref=vX.Y.Z"
+  source = "github.com/humanitec-tf-modules/k8s-management-cluster?ref=vX.Y.Z"
   providers = {
     humanitec  = humanitec
     helm       = helm
@@ -112,7 +112,7 @@ The following examples configure the Operator installation. They omit the cluste
 
 ```hcl
 module "my_management_cluster" {
-  source = "github.com/humanitec-tf-modules/management-cluster-k8s?ref=vX.Y.Z"
+  source = "github.com/humanitec-tf-modules/k8s-management-cluster?ref=vX.Y.Z"
   providers = {
     humanitec  = humanitec
     helm       = helm
@@ -135,7 +135,7 @@ The module can generate a key pair for convenience, but we do not recommend this
 
 ```hcl
 module "my_management_cluster" {
-  source = "github.com/humanitec-tf-modules/management-cluster-k8s?ref=vX.Y.Z"
+  source = "github.com/humanitec-tf-modules/k8s-management-cluster?ref=vX.Y.Z"
   providers = {
     humanitec  = humanitec
     helm       = helm
@@ -153,7 +153,7 @@ module "my_management_cluster" {
 
 ```hcl
 module "my_management_cluster" {
-  source = "github.com/humanitec-tf-modules/management-cluster-k8s?ref=vX.Y.Z"
+  source = "github.com/humanitec-tf-modules/k8s-management-cluster?ref=vX.Y.Z"
   providers = {
     humanitec  = humanitec
     helm       = helm
