@@ -73,6 +73,7 @@ module "my_management_cluster" {
   cluster_values = {
     "loadbalancer" = "my-lb.example.com"
     "cluster_data" = {
+      "name" = "my-cluster"
       # Kubeconfig property: cluster.server
       "server" = "https://my-cluster.example.com:6443"
       # Kubeconfig property: cluster.certificate-authority-data
