@@ -37,9 +37,11 @@ To access the cluster API server directly instead, set `enable_agent = false`.
 
 ## Authentication for Drivers
 
-The Operator needs to [authenticate against Humanitec-hosted Drivers](https://developer.humanitec.com/platform-orchestrator/docs/integration-and-extensions/humanitec-operator/installation/#configure-authentication-for-drivers) only if you use any of them. The Echo, Template, and any built-in Drivers run inside the Operator and do not need it.
+The Operator needs to [authenticate against Humanitec-hosted Drivers](https://developer.humanitec.com/platform-orchestrator/docs/integration-and-extensions/humanitec-operator/installation/#configure-authentication-for-drivers) only if you use any of them. The Echo, Template, and any other "built-in" Drivers run inside the Operator and do not need it.
 
-Authentication for Drivers is off by default. To turn it on, set `enable_driver_authentication = true`. The module then does two things:
+Using only built-in Drivers is strongly advised to take advantage of a simplified and more secure setup. The [built-in Container Driver](https://developer.humanitec.com/platform-orchestrator/docs/integration-and-extensions/drivers/container-builtin/) lets you deploy any resource using your favorite tooling.
+
+Authentication for Drivers is therefore off by default. To turn it on, set `enable_driver_authentication = true`. The module then does two things:
 
 - It registers the public key in your Humanitec Organization
 - It stores the private key and the Humanitec Organization ID in a Kubernetes Secret in the Operator namespace
