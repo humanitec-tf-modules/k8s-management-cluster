@@ -46,6 +46,8 @@ Authentication for Drivers is off by default. To turn it on, set `enable_driver_
 
 You can pass in a key pair via `operator_private_key` and `operator_public_key`, or let the module generate one.
 
+The module does not store a passed-in private key in the Terraform state.
+
 ## Usage
 
 ### Generic cluster
@@ -123,15 +125,17 @@ module "my_management_cluster" {
 
   enable_driver_authentication = true
   humanitec_org_id             = "my-org"
-  operator_private_key         = "-----BEGIN PRIVATE KEY----- ..."
-  operator_public_key          = "-----BEGIN PUBLIC KEY----- ..."
+  # Ephemeral: pass it in from an ephemeral variable or an ephemeral resource of your secret store
+  # so that the key is not stored in the state of the calling configuration either
+  operator_private_key = var.operator_private_key
+  operator_public_key  = "-----BEGIN PUBLIC KEY----- ..."
   helm_release_version         = "1.2.3"
 }
 ```
 
 ### Enable authentication for Drivers with a convenience key pair
 
-The module can generate a key pair for convenience, but we do not recommend this for production use because the module stores the private key in the Terraform state. Use an external key management solution and pass in the keys instead as shown in the preceding example.
+The module can generate a key pair for convenience, but we do not recommend this for production use because the `tls_private_key` resource stores the generated private key in the Terraform state. Use an external key management solution and pass in the keys instead as shown in the preceding example. The module does not store a passed-in private key in the state.
 
 ```hcl
 module "my_management_cluster" {
@@ -257,7 +261,7 @@ No modules.
 | <a name="input_helm_release_wait"></a> [helm\_release\_wait](#input\_helm\_release\_wait) | Will wait until all resources are in a ready state before marking the release as successful. Defaults to `true`. | `bool` | `null` | no |
 | <a name="input_helm_release_wait_for_jobs"></a> [helm\_release\_wait\_for\_jobs](#input\_helm\_release\_wait\_for\_jobs) | If wait is enabled, will wait until all Jobs have been completed before marking the release as successful. Defaults to `false`. | `bool` | `null` | no |
 | <a name="input_humanitec_org_id"></a> [humanitec\_org\_id](#input\_humanitec\_org\_id) | Humanitec Organization ID. Required if `enable_driver_authentication` is `true`, ignored otherwise. | `string` | `null` | no |
-| <a name="input_operator_private_key"></a> [operator\_private\_key](#input\_operator\_private\_key) | Private key for the Humanitec Operator authentication against Humanitec-hosted Drivers. Must be a multiline string starting with -----BEGIN PRIVATE KEY----- and having a final line break. Both or neither of `operator_public_key` and `operator_private_key` must be set, and only if `enable_driver_authentication` is `true`. If not set while `enable_driver_authentication` is `true`, a convenience key pair will be generated using a `tls_private_key` resource and stored in the Terraform state, but this is not recommended for production use. | `string` | `null` | no |
+| <a name="input_operator_private_key"></a> [operator\_private\_key](#input\_operator\_private\_key) | Private key for the Humanitec Operator authentication against Humanitec-hosted Drivers. Must be a multiline string starting with -----BEGIN PRIVATE KEY----- and having a final line break. Both or neither of `operator_public_key` and `operator_private_key` must be set, and only if `enable_driver_authentication` is `true`. The variable is ephemeral and the module writes the key to the Kubernetes Secret via a write-only attribute, so the key is not stored in the Terraform state or plan. If not set while `enable_driver_authentication` is `true`, a convenience key pair will be generated using a `tls_private_key` resource and stored in the Terraform state, but this is not recommended for production use. | `string` | `null` | no |
 | <a name="input_operator_public_key"></a> [operator\_public\_key](#input\_operator\_public\_key) | Public key for the Humanitec Operator authentication against Humanitec-hosted Drivers. Must be a multiline string starting with -----BEGIN PUBLIC KEY----- and having a final line break. Both or neither of `operator_public_key` and `operator_private_key` must be set, and only if `enable_driver_authentication` is `true`. If not set while `enable_driver_authentication` is `true`, a convenience key pair will be generated using a `tls_private_key` resource and stored in the Terraform state, but this is not recommended for production use. | `string` | `null` | no |
 | <a name="input_resource_definition_criteria"></a> [resource\_definition\_criteria](#input\_resource\_definition\_criteria) | Matching Criteria for the Resource Definition, directing Deployments to the cluster. Each entry creates one Matching Criteria. Unset attributes match any value. See https://developer.humanitec.com/platform-orchestrator/docs/platform-orchestrator/resources/resource-definitions/#matching-criteria | <pre>list(object({<br/>    app_id   = optional(string)<br/>    env_id   = optional(string)<br/>    env_type = optional(string)<br/>    res_id   = optional(string)<br/>    class    = optional(string)<br/>  }))</pre> | `[]` | no |
 | <a name="input_resource_definition_id"></a> [resource\_definition\_id](#input\_resource\_definition\_id) | ID of the Resource Definition of type `k8s-cluster` representing the cluster. Must be unique within the Humanitec Organization. Defaults to `<resource_definition_id_prefix>-<suffix>` with a random suffix of four lowercase alphanumeric characters. | `string` | `null` | no |
@@ -276,7 +280,7 @@ No modules.
 | <a name="output_helm_release_namespace"></a> [helm\_release\_namespace](#output\_helm\_release\_namespace) | Kubernetes namespace where the Operator is installed |
 | <a name="output_helm_release_repository"></a> [helm\_release\_repository](#output\_helm\_release\_repository) | Repository used for the Operator Helm chart |
 | <a name="output_helm_release_version"></a> [helm\_release\_version](#output\_helm\_release\_version) | Chart version used for the Operator installation |
-| <a name="output_operator_private_key"></a> [operator\_private\_key](#output\_operator\_private\_key) | Private key of the Operator in PEM format. `null` if `enable_driver_authentication` is `false`. |
+| <a name="output_operator_private_key"></a> [operator\_private\_key](#output\_operator\_private\_key) | Generated convenience private key of the Operator in PEM format. `null` if `enable_driver_authentication` is `false` or if the key pair is passed in via `operator_private_key` and `operator_public_key`. |
 | <a name="output_operator_private_key_secret_name"></a> [operator\_private\_key\_secret\_name](#output\_operator\_private\_key\_secret\_name) | Name of the Kubernetes Secret holding the private key of the Operator. `null` if `enable_driver_authentication` is `false`. |
 | <a name="output_operator_public_key"></a> [operator\_public\_key](#output\_operator\_public\_key) | Public key of the Operator in PEM format. `null` if `enable_driver_authentication` is `false`. |
 | <a name="output_operator_public_key_fingerprint"></a> [operator\_public\_key\_fingerprint](#output\_operator\_public\_key\_fingerprint) | Fingerprint (SHA256 hash of the DER representation) of the public key registered in the Humanitec Organization. Use it to debug authentication against Humanitec-hosted Drivers. `null` if `enable_driver_authentication` is `false`. |

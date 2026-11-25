@@ -260,24 +260,20 @@ run "configures_driver_authentication_with_passed_in_keys" {
     error_message = "The private key Secret must be created in the Operator namespace"
   }
   assert {
-    condition     = kubernetes_secret_v1.operator_private_key[0].data.privateKey == var.operator_private_key
-    error_message = "The Secret key privateKey must be set to operator_private_key"
+    condition     = kubernetes_secret_v1.operator_private_key[0].data_wo == null
+    error_message = "The Secret data must be write-only so that the private key is not stored in the plan or state"
   }
   assert {
-    condition     = kubernetes_secret_v1.operator_private_key[0].data.humanitecOrganisationID == "my-org"
-    error_message = "The Secret key humanitecOrganisationID must be set to humanitec_org_id"
-  }
-  assert {
-    condition     = length(kubernetes_secret_v1.operator_private_key[0].data) == 2
-    error_message = "The Secret must only contain the keys privateKey and humanitecOrganisationID"
+    condition     = kubernetes_secret_v1.operator_private_key[0].data_wo_revision == 34883661070643
+    error_message = "data_wo_revision must be derived from the public key and the Organization ID"
   }
   assert {
     condition     = output.operator_public_key == var.operator_public_key
     error_message = "operator_public_key output must be set to operator_public_key when the keys are passed in"
   }
   assert {
-    condition     = output.operator_private_key == var.operator_private_key
-    error_message = "operator_private_key output must be set to operator_private_key when the keys are passed in"
+    condition     = output.operator_private_key == null
+    error_message = "operator_private_key output must be null when the keys are passed in so that the key is not stored in the state"
   }
   assert {
     condition     = output.operator_private_key_secret_name == "humanitec-operator-private-key"
@@ -286,6 +282,38 @@ run "configures_driver_authentication_with_passed_in_keys" {
   assert {
     condition     = length(helm_release.humanitec_operator.set) == 0 && length(helm_release.humanitec_operator.set_sensitive) == 0
     error_message = "Driver authentication must not pass any chart values"
+  }
+}
+
+run "changes_secret_revision_with_public_key" {
+  command = plan
+
+  variables {
+    enable_driver_authentication = true
+    humanitec_org_id             = "my-org"
+    operator_private_key         = "-----BEGIN PRIVATE KEY-----\nxyz\n-----END PRIVATE KEY-----\n"
+    operator_public_key          = "-----BEGIN PUBLIC KEY-----\nxyz\n-----END PUBLIC KEY-----\n"
+  }
+
+  assert {
+    condition     = kubernetes_secret_v1.operator_private_key[0].data_wo_revision != 34883661070643
+    error_message = "data_wo_revision must change when the key pair changes so that the provider rewrites the Secret"
+  }
+}
+
+run "changes_secret_revision_with_humanitec_org_id" {
+  command = plan
+
+  variables {
+    enable_driver_authentication = true
+    humanitec_org_id             = "my-other-org"
+    operator_private_key         = "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----\n"
+    operator_public_key          = "-----BEGIN PUBLIC KEY-----\nabc\n-----END PUBLIC KEY-----\n"
+  }
+
+  assert {
+    condition     = kubernetes_secret_v1.operator_private_key[0].data_wo_revision != 34883661070643
+    error_message = "data_wo_revision must change when humanitec_org_id changes so that the provider rewrites the Secret"
   }
 }
 
@@ -312,6 +340,8 @@ run "generates_convenience_key_without_operator_private_key" {
     enable_driver_authentication = true
     humanitec_org_id             = "my-org"
     helm_release_set_wo          = []
+    # terraform test fails apply runs if an ephemeral variable is left unset, so set it to an empty value
+    operator_private_key = ""
   }
 
   assert {
@@ -327,8 +357,8 @@ run "generates_convenience_key_without_operator_private_key" {
     error_message = "The registered public key must be the public key of the generated key"
   }
   assert {
-    condition     = kubernetes_secret_v1.operator_private_key[0].data.privateKey == tls_private_key.operator[0].private_key_pem_pkcs8
-    error_message = "The Secret key privateKey must be set to the generated key in PKCS#8 format"
+    condition     = kubernetes_secret_v1.operator_private_key[0].data_wo == null && kubernetes_secret_v1.operator_private_key[0].data_wo_revision >= 1
+    error_message = "The Secret data must be write-only with a valid revision for the generated key"
   }
   assert {
     condition     = output.operator_public_key == tls_private_key.operator[0].public_key_pem

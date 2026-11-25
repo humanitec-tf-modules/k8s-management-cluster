@@ -3,8 +3,8 @@ output "operator_public_key" {
   value       = local.operator_public_key
 }
 output "operator_private_key" {
-  description = "Private key of the Operator in PEM format. `null` if `enable_driver_authentication` is `false`."
-  value       = local.operator_private_key
+  description = "Generated convenience private key of the Operator in PEM format. `null` if `enable_driver_authentication` is `false` or if the key pair is passed in via `operator_private_key` and `operator_public_key`."
+  value       = one(tls_private_key.operator[*].private_key_pem_pkcs8)
   sensitive   = true
 }
 output "operator_public_key_id" {

@@ -121,9 +121,10 @@ variable "enable_driver_authentication" {
   default     = false
 }
 variable "operator_private_key" {
-  description = "Private key for the Humanitec Operator authentication against Humanitec-hosted Drivers. Must be a multiline string starting with -----BEGIN PRIVATE KEY----- and having a final line break. Both or neither of `operator_public_key` and `operator_private_key` must be set, and only if `enable_driver_authentication` is `true`. If not set while `enable_driver_authentication` is `true`, a convenience key pair will be generated using a `tls_private_key` resource and stored in the Terraform state, but this is not recommended for production use."
+  description = "Private key for the Humanitec Operator authentication against Humanitec-hosted Drivers. Must be a multiline string starting with -----BEGIN PRIVATE KEY----- and having a final line break. Both or neither of `operator_public_key` and `operator_private_key` must be set, and only if `enable_driver_authentication` is `true`. The variable is ephemeral and the module writes the key to the Kubernetes Secret via a write-only attribute, so the key is not stored in the Terraform state or plan. If not set while `enable_driver_authentication` is `true`, a convenience key pair will be generated using a `tls_private_key` resource and stored in the Terraform state, but this is not recommended for production use."
   type        = string
   sensitive   = true
+  ephemeral   = true
   nullable    = true
   default     = null
   validation {

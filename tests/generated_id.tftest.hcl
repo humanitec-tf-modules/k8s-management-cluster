@@ -22,6 +22,8 @@ variables {
   cluster_access_subject_kind = "Group"
   cluster_access_subject_name = "humanitec-platform-orchestrator"
   helm_release_set_wo         = []
+  # terraform test fails apply runs if an ephemeral variable is left unset, so set it to an empty value
+  operator_private_key = ""
 }
 
 run "generates_resource_definition_id" {

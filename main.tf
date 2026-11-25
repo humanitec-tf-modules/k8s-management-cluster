@@ -1,9 +1,17 @@
 locals {
-  # A passed-in key counts as set only if it is not empty or blank
-  operator_keys_passed_in = nonsensitive(try(trimspace(var.operator_private_key), "") != "")
+  # A passed-in key pair counts as set only if it is not empty or blank. Checked on the public key because the
+  # private key is ephemeral and must not decide the resource count. The validation of operator_private_key
+  # ensures that both or neither key are set.
+  operator_keys_passed_in = try(trimspace(var.operator_public_key), "") != ""
 
+  # Ephemeral if passed in, so it can only be used in write-only attributes
   operator_private_key = var.enable_driver_authentication ? coalesce(one(tls_private_key.operator[*].private_key_pem_pkcs8), var.operator_private_key) : null
   operator_public_key  = var.enable_driver_authentication ? coalesce(one(tls_private_key.operator[*].public_key_pem), var.operator_public_key) : null
+
+  # Revision of the write-only Secret data. The provider rewrites the data whenever the revision changes, so derive it
+  # from the non-secret values that change together with the data: the public key, which changes with the private key,
+  # and the Organization ID. Must be at least 1.
+  operator_private_key_secret_revision = var.enable_driver_authentication ? parseint(substr(sha256("${local.operator_public_key}\n${var.humanitec_org_id}"), 0, 12), 16) + 1 : null
 
   # The Operator expects the Secret under this exact name in its own namespace
   operator_private_key_secret_name = "humanitec-operator-private-key"
@@ -86,10 +94,12 @@ resource "kubernetes_secret_v1" "operator_private_key" {
     namespace = helm_release.humanitec_operator.namespace
   }
 
-  data = {
+  # Write-only so that the private key is not stored in the Terraform state
+  data_wo = {
     privateKey              = local.operator_private_key
     humanitecOrganisationID = var.humanitec_org_id
   }
+  data_wo_revision = local.operator_private_key_secret_revision
 
   # Make the Operator use the private key only once the public key is registered.
   # On destroy, the Secret is removed before the registration.
